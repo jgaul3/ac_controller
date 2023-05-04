@@ -1,10 +1,11 @@
-// Must define 'NETWORK_SSID' and 'NETWORK_PW'
+// Must define 'NETWORK_SSID', 'NETWORK_PW', and 'AUTH_KEY'
 #include "ac_controller.h"
 
 #include <ArduinoJson.h>
 #include <ir_Daikin.h>
 #include <WebServer.h>
 #include <WiFi.h>
+
 
 const uint16_t led_out = D0;
 IRDaikinESP ac(led_out);
@@ -27,6 +28,7 @@ void setup() {
       200,
       "text/plain",
       "AC controller running: \n"
+      "\"auth_key\": the same authorization key\n"
       "\"powerStatus\": [\"on\", \"off\"]\n"
       "\"mode\": [\"auto\", \"dry\", \"heat\", \"cool\", \"fan\"]\n"
       "\"temp\": [15, 30], omitted if mode is fan\n"
@@ -43,6 +45,11 @@ void setup() {
     DeserializationError error = deserializeJson(arguments, server.arg("plain"));
     if (error) {
       server.send(404, "text/plain", error.c_str());
+      return;
+    }
+
+    if (!arguments.containsKey("auth_key") || arguments["auth_key"] != AUTH_KEY) {
+      server.send(401, "text/plain", "who are you?");
       return;
     }
 
